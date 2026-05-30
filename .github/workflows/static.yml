@@ -1,0 +1,55 @@
+name: Deploy static content to GitHub Pages
+
+on:
+  push:
+    branches: ["main"] 
+  workflow_dispatch: 
+
+permissions:
+  contents: read 
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v6
+
+      - name: Checkout data branch
+        uses: actions/checkout@v6
+        with:
+          ref: 'data'
+          path: 'temp-data'
+
+      - name: Setup database files
+        run: |
+          mkdir -p web/data
+          # Find and copy any db.gz files from the data branch checkout to the web/data folder
+          find temp-data -name "*.db.gz" -exec cp {} web/data/ \;
+          rm -rf temp-data
+
+      - name: Disable Jekyll
+        run: touch .nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
