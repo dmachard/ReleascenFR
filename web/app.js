@@ -8,7 +8,8 @@ let appState = {
     currentPage: 1,
     itemsPerPage: 15,
     charts: {},
-    allDates: []
+    allDates: [],
+    lastUpdate: null
 };
 
 // Start
@@ -205,6 +206,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Display last update time if element exists
+    const updateEl = document.getElementById('last-update-time');
+    if (updateEl) {
+        let lastUpdateStr = '';
+        if (appState.lastUpdate) {
+            lastUpdateStr = formatLastUpdateDate(appState.lastUpdate);
+        } else if (appState.rawReleases && appState.rawReleases.length > 0) {
+            const latest = appState.rawReleases[0];
+            if (latest && latest.date_added) {
+                const parts = latest.date_added.split(':');
+                if (parts.length === 3) {
+                    lastUpdateStr = `${parts[0]}:${parts[1]}`;
+                } else {
+                    lastUpdateStr = latest.date_added;
+                }
+            }
+        }
+
+        if (lastUpdateStr) {
+            updateEl.innerHTML = `<i class="far fa-clock"></i> Mise à jour : ${lastUpdateStr}`;
+            updateEl.style.display = 'inline-flex';
+        } else {
+            updateEl.style.display = 'none';
+        }
+    }
+
     // Set up date select listener (if explorer is enabled)
     if (explorerEnabled && dateSelect) {
         dateSelect.addEventListener('change', () => {
@@ -237,6 +264,18 @@ async function loadDatabaseFile(filename) {
     try {
         const res = await fetch(filename);
         if (!res.ok) return null;
+
+        // Extract Last-Modified header
+        const lastMod = res.headers.get('Last-Modified');
+        if (lastMod) {
+            const date = new Date(lastMod);
+            if (!isNaN(date.getTime())) {
+                if (!appState.lastUpdate || date > appState.lastUpdate) {
+                    appState.lastUpdate = date;
+                }
+            }
+        }
+
         const ds = new DecompressionStream('gzip');
         const decompressedStream = res.body.pipeThrough(ds);
         const jsonText = await new Response(decompressedStream).text();
@@ -1677,4 +1716,14 @@ function showCopyFeedback(btn, text) {
             btn.classList.remove('copied');
         }, 2000);
     });
+}
+
+// Helper to format Date object to "DD/MM/YYYY HH:MM"
+function formatLastUpdateDate(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
