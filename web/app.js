@@ -298,8 +298,9 @@ async function loadDatabaseFile(filename) {
         const parsed = JSON.parse(jsonText);
 
         // Reconstruct columnar format into array of objects
+        let items = [];
         if (parsed && parsed.keys && parsed.rows) {
-            return parsed.rows.map(row => {
+            items = parsed.rows.map(row => {
                 const item = {};
                 parsed.keys.forEach((key, index) => {
                     const val = row[index];
@@ -309,8 +310,19 @@ async function loadDatabaseFile(filename) {
                 });
                 return item;
             });
+        } else if (Array.isArray(parsed)) {
+            items = parsed;
+        } else {
+            return parsed;
         }
-        return parsed;
+
+        // Convert date_added from UTC to Local Time
+        items.forEach(item => {
+            if (item.date_added) {
+                item.date_added = convertUTCToLocalDateTimeString(item.date_added);
+            }
+        });
+        return items;
     } catch (e) {
         console.warn(`Failed to fetch ${filename}:`, e);
         return null;
@@ -1742,4 +1754,33 @@ function formatLastUpdateDate(date) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+// Helper to convert UTC date string "DD/MM/YYYY HH:MM:SS" to Local Date Time string "DD/MM/YYYY HH:MM:SS"
+function convertUTCToLocalDateTimeString(dateStr) {
+    if (!dateStr) return dateStr;
+    const parts = dateStr.split(' ');
+    if (parts.length !== 2) return dateStr;
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+    if (dateParts.length !== 3 || timeParts.length !== 3) return dateStr;
+
+    const day = parseInt(dateParts[0], 10);
+    const month = parseInt(dateParts[1], 10) - 1;
+    const year = parseInt(dateParts[2], 10);
+    const hour = parseInt(timeParts[0], 10);
+    const min = parseInt(timeParts[1], 10);
+    const sec = parseInt(timeParts[2], 10);
+
+    const utcDate = new Date(Date.UTC(year, month, day, hour, min, sec));
+    if (isNaN(utcDate.getTime())) return dateStr;
+
+    const localDay = String(utcDate.getDate()).padStart(2, '0');
+    const localMonth = String(utcDate.getMonth() + 1).padStart(2, '0');
+    const localYear = utcDate.getFullYear();
+    const localHour = String(utcDate.getHours()).padStart(2, '0');
+    const localMin = String(utcDate.getMinutes()).padStart(2, '0');
+    const localSec = String(utcDate.getSeconds()).padStart(2, '0');
+
+    return `${localDay}/${localMonth}/${localYear} ${localHour}:${localMin}:${localSec}`;
 }

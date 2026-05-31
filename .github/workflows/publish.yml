@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  dockerhub:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Build the Docker image
+      run: |
+        docker build . --file Dockerfile -t releascenfr
+
+    - name: Tag image
+      run: |
+        docker tag releascenfr dmachard/releascenfr:${{ github.event.release.tag_name }}
+        docker tag releascenfr dmachard/releascenfr:latest
+
+    - name: Upload to DockerHub
+      run: |
+        echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_LOGIN }}" --password-stdin
+        docker push dmachard/releascenfr:latest
+        docker push dmachard/releascenfr:${{ github.event.release.tag_name }}
