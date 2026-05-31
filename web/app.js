@@ -210,18 +210,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     const updateEl = document.getElementById('last-update-time');
     if (updateEl) {
         let lastUpdateStr = '';
-        if (appState.lastUpdate) {
-            lastUpdateStr = formatLastUpdateDate(appState.lastUpdate);
-        } else if (appState.rawReleases && appState.rawReleases.length > 0) {
-            const latest = appState.rawReleases[0];
-            if (latest && latest.date_added) {
-                const parts = latest.date_added.split(':');
-                if (parts.length === 3) {
-                    lastUpdateStr = `${parts[0]}:${parts[1]}`;
-                } else {
-                    lastUpdateStr = latest.date_added;
+
+        // Find latest release date from data
+        let latestTime = 0;
+        let latestDateStr = '';
+        const checkLatest = (item) => {
+            if (item && item.date_added) {
+                const t = parseDateAdded(item.date_added);
+                if (t > latestTime) {
+                    latestTime = t;
+                    latestDateStr = item.date_added;
                 }
             }
+        };
+
+        if (appState.rawReleases) appState.rawReleases.forEach(checkLatest);
+        if (appState.rawStats) appState.rawStats.forEach(checkLatest);
+
+        if (latestDateStr) {
+            // Format to "DD/MM/YYYY HH:MM" (strip seconds)
+            const parts = latestDateStr.split(':');
+            if (parts.length === 3) {
+                lastUpdateStr = `${parts[0]}:${parts[1]}`;
+            } else {
+                lastUpdateStr = latestDateStr;
+            }
+        } else if (appState.lastUpdate) {
+            // Fallback to HTTP Last-Modified header if data dates are not found
+            lastUpdateStr = formatLastUpdateDate(appState.lastUpdate);
         }
 
         if (lastUpdateStr) {
