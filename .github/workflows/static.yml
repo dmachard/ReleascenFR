@@ -2,11 +2,11 @@ name: Deploy static content to GitHub Pages
 
 on:
   push:
-    branches: ["main"] 
+    branches: ["main", "data"] 
   workflow_dispatch: 
 
 permissions:
-  contents: read 
+  contents: write 
   pages: write
   id-token: write
 
@@ -53,3 +53,9 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+      # Delete the temporary data branch after deployment to keep history clean
+      - name: Delete data branch
+        if: github.ref == 'refs/heads/data'
+        run: |
+          git push origin --delete data
