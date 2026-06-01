@@ -8,7 +8,7 @@ Observabilité: https://dmachard.github.io/ReleascenFR/
 ## Pour lancer le site en local avec docker
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-Le site sera disponible à l'adresse http://localhost:8000
+Le site sera disponible à l'adresse http://localhost:8080
