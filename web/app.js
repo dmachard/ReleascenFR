@@ -1319,10 +1319,10 @@ function renderStatsCharts() {
         }
     });
 
-    // 2. Identify top 4 resolutions
+    // 2. Identify top 5 resolutions
     const topResolutions = Object.entries(allResCounts)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 4)
+        .slice(0, 5)
         .map(entry => entry[0]);
 
     // 3. Get sorted dates
@@ -1611,7 +1611,11 @@ function renderStatsCharts() {
 
     // Calculate Counts
     const movieReleaseCounts = {};
+    const movieDisplayNames = {};
+    const movieImdbIds = {};
     const seriesReleaseCounts = {};
+    const seriesDisplayNames = {};
+    const seriesImdbIds = {};
     const groupWeekCounts = {};
 
     data.forEach(r => {
@@ -1623,8 +1627,14 @@ function renderStatsCharts() {
             if (moviesPeriodStart && (!d || d < moviesPeriodStart)) inRange = false;
             if (moviesPeriodEnd && (!d || d >= moviesPeriodEnd)) inRange = false;
             if (inRange) {
-                const key = r.year ? `${r.title} (${r.year})` : r.title;
+                const titleStr = r.year ? `${r.title} (${r.year})` : r.title;
+                const key = titleStr.toLowerCase();
                 movieReleaseCounts[key] = (movieReleaseCounts[key] || 0) + 1;
+                if (!movieDisplayNames[key]) movieDisplayNames[key] = titleStr;
+                // Store first encountered imdb_id for this movie key
+                if (!movieImdbIds[key] && r.imdb_id) {
+                    movieImdbIds[key] = r.imdb_id;
+                }
             }
         }
 
@@ -1634,7 +1644,13 @@ function renderStatsCharts() {
             if (seriesPeriodStart && (!d || d < seriesPeriodStart)) inRange = false;
             if (seriesPeriodEnd && (!d || d >= seriesPeriodEnd)) inRange = false;
             if (inRange) {
-                seriesReleaseCounts[r.title] = (seriesReleaseCounts[r.title] || 0) + 1;
+                const key = r.title.toLowerCase();
+                seriesReleaseCounts[key] = (seriesReleaseCounts[key] || 0) + 1;
+                if (!seriesDisplayNames[key]) seriesDisplayNames[key] = r.title;
+                // Store first encountered imdb_id for this series
+                if (!seriesImdbIds[key] && r.imdb_id) {
+                    seriesImdbIds[key] = r.imdb_id;
+                }
             }
         }
 
@@ -1670,13 +1686,34 @@ function renderStatsCharts() {
         if (topMovies.length === 0) {
             moviesListEl.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 20px;">Aucun film trouvé sur cette période</div>';
         } else {
-            topMovies.forEach(([name, count], index) => {
+            topMovies.forEach(([key, count], index) => {
+                const name = movieDisplayNames[key] || key;
                 const rank = index + 1;
                 const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                const imdbId = movieImdbIds[key] || null;
+                const imdbUrl = imdbId
+                    ? (imdbId.startsWith('tt')
+                        ? `https://www.imdb.com/title/${imdbId}`
+                        : `https://www.themoviedb.org/movie/${imdbId}`)
+                    : null;
+                const posterSrc = imdbId && imdbId.startsWith('tt')
+                    ? `https://images.metahub.space/poster/medium/${imdbId}/img`
+                    : 'no-poster.svg';
+                const titleEl = imdbUrl
+                    ? `<a class="top-list-name" href="${imdbUrl}" target="_blank" rel="noopener" title="${name} — Voir sur ${imdbId && imdbId.startsWith('tt') ? 'IMDb' : 'TMDb'}">${name}</a>`
+                    : `<span class="top-list-name" title="${name}">${name}</span>`;
                 const itemHtml = `
-                    <div class="top-list-item">
+                    <div class="top-list-item top-list-item--with-poster">
                         <span class="top-list-rank ${rankClass}">${rank}</span>
-                        <span class="top-list-name" title="${name}">${name}</span>
+                        <div class="top-list-poster-wrap">
+                            ${imdbUrl
+                                ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
+                                       <img class="top-list-poster" src="${posterSrc}" alt="${name}" loading="lazy" onerror="this.src='no-poster.svg'">
+                                   </a>`
+                                : `<img class="top-list-poster" src="no-poster.svg" alt="${name}" loading="lazy">`
+                            }
+                        </div>
+                        ${titleEl}
                         <span class="top-list-count">${count} entrées</span>
                     </div>
                 `;
@@ -1692,13 +1729,34 @@ function renderStatsCharts() {
         if (topSeries.length === 0) {
             seriesListEl.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 20px;">Aucune série trouvée sur cette période</div>';
         } else {
-            topSeries.forEach(([name, count], index) => {
+            topSeries.forEach(([key, count], index) => {
+                const name = seriesDisplayNames[key] || key;
                 const rank = index + 1;
                 const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                const imdbId = seriesImdbIds[key] || null;
+                const imdbUrl = imdbId
+                    ? (imdbId.startsWith('tt')
+                        ? `https://www.imdb.com/title/${imdbId}`
+                        : `https://www.themoviedb.org/tv/${imdbId}`)
+                    : null;
+                const posterSrc = imdbId && imdbId.startsWith('tt')
+                    ? `https://images.metahub.space/poster/medium/${imdbId}/img`
+                    : 'no-poster.svg';
+                const titleEl = imdbUrl
+                    ? `<a class="top-list-name" href="${imdbUrl}" target="_blank" rel="noopener" title="${name} — Voir sur ${imdbId && imdbId.startsWith('tt') ? 'IMDb' : 'TMDb'}">${name}</a>`
+                    : `<span class="top-list-name" title="${name}">${name}</span>`;
                 const itemHtml = `
-                    <div class="top-list-item">
+                    <div class="top-list-item top-list-item--with-poster">
                         <span class="top-list-rank ${rankClass}">${rank}</span>
-                        <span class="top-list-name" title="${name}">${name}</span>
+                        <div class="top-list-poster-wrap">
+                            ${imdbUrl
+                                ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
+                                       <img class="top-list-poster" src="${posterSrc}" alt="${name}" loading="lazy" onerror="this.src='no-poster.svg'">
+                                   </a>`
+                                : `<img class="top-list-poster" src="no-poster.svg" alt="${name}" loading="lazy">`
+                            }
+                        </div>
+                        ${titleEl}
                         <span class="top-list-count">${count} entrées</span>
                     </div>
                 `;
