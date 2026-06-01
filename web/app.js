@@ -8,8 +8,7 @@ let appState = {
     currentPage: 1,
     itemsPerPage: 15,
     charts: {},
-    allDates: [],
-    lastUpdate: null
+    allDates: []
 };
 
 // Start
@@ -235,12 +234,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 lastUpdateStr = latestDateStr;
             }
-        } else if (appState.lastUpdate) {
-            // Fallback to HTTP Last-Modified header (already a Date object in local TZ)
-            lastUpdateStr = appState.lastUpdate.toLocaleString('fr-FR', {
-                day: '2-digit', month: '2-digit', year: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
         }
 
         if (lastUpdateStr) {
@@ -283,17 +276,6 @@ async function loadDatabaseFile(filename) {
     try {
         const res = await fetch(filename);
         if (!res.ok) return null;
-
-        // Extract Last-Modified header
-        const lastMod = res.headers.get('Last-Modified');
-        if (lastMod) {
-            const date = new Date(lastMod);
-            if (!isNaN(date.getTime())) {
-                if (!appState.lastUpdate || date > appState.lastUpdate) {
-                    appState.lastUpdate = date;
-                }
-            }
-        }
 
         const ds = new DecompressionStream('gzip');
         const decompressedStream = res.body.pipeThrough(ds);
