@@ -2,8 +2,8 @@ name: Deploy static content to GitHub Pages
 
 on:
   push:
-    branches: ["main", "data"] 
-  workflow_dispatch: 
+    branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: write 
@@ -53,9 +53,8 @@ jobs:
           path: '.'
 
       - name: Delete data branch
-        if: github.ref == 'refs/heads/data'
         run: |
-          git push origin --delete data
+          git push origin --delete data 2>/dev/null || true
 
       - name: Deploy to GitHub Pages
         id: deployment
