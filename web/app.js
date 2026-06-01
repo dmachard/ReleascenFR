@@ -236,8 +236,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 lastUpdateStr = latestDateStr;
             }
         } else if (appState.lastUpdate) {
-            // Fallback to HTTP Last-Modified header if data dates are not found
-            lastUpdateStr = formatLastUpdateDate(appState.lastUpdate);
+            // Fallback to HTTP Last-Modified header (already a Date object in local TZ)
+            lastUpdateStr = appState.lastUpdate.toLocaleString('fr-FR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
         }
 
         if (lastUpdateStr) {
@@ -316,12 +319,6 @@ async function loadDatabaseFile(filename) {
             return parsed;
         }
 
-        // Convert date_added from UTC to Local Time
-        items.forEach(item => {
-            if (item.date_added) {
-                item.date_added = convertUTCToLocalDateTimeString(item.date_added);
-            }
-        });
         return items;
     } catch (e) {
         console.warn(`Failed to fetch ${filename}:`, e);
