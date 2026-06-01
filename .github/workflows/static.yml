@@ -29,17 +29,22 @@ jobs:
           ref: 'main'
 
       - name: Checkout data branch
-        uses: actions/checkout@v6
-        with:
-          ref: 'data'
-          path: 'temp-data'
+        run: |
+          if git ls-remote --exit-code --heads origin data; then
+            git clone --branch data --depth 1 https://github.com/${{ github.repository }}.git temp-data
+            echo "DATA_BRANCH_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "No data branch found, skipping."
+            echo "DATA_BRANCH_EXISTS=false" >> $GITHUB_ENV
+          fi
 
       - name: Setup database files
         run: |
           mkdir -p web/data
-          # Find and copy any db.gz files from the data branch checkout to the web/data folder
-          find temp-data -name "*.db.gz" -exec cp {} web/data/ \;
-          rm -rf temp-data
+          if [ "$DATA_BRANCH_EXISTS" = "true" ]; then
+            find temp-data -name "*.db.gz" -exec cp {} web/data/ \;
+            rm -rf temp-data
+          fi
 
       - name: Disable Jekyll
         run: touch .nojekyll
