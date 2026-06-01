@@ -57,10 +57,6 @@ jobs:
         with:
           path: '.'
 
-      - name: Delete data branch
-        run: |
-          git push origin --delete data 2>/dev/null || true
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
