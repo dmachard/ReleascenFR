@@ -123,6 +123,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
+        // Populate extension selector
+        const extensionSelect = document.getElementById('filter-extension');
+        if (extensionSelect) {
+            extensionSelect.innerHTML = '<option value="">Toutes les extensions</option>';
+            const extensionSet = new Set();
+            appState.rawReleases.forEach(item => {
+                if (item.filename) {
+                    const parts = item.filename.split('.');
+                    if (parts.length > 1) {
+                        const ext = parts[parts.length - 1].toLowerCase();
+                        if (/^[a-z0-9]{2,4}$/.test(ext)) {
+                            extensionSet.add(ext.toUpperCase());
+                        }
+                    }
+                }
+            });
+            Array.from(extensionSet).sort().forEach(ext => {
+                const option = document.createElement('option');
+                option.value = ext;
+                option.textContent = ext;
+                extensionSelect.appendChild(option);
+            });
+        }
+
         // Populate video codec selector
         const codecSelect = document.getElementById('filter-codec');
         if (codecSelect) {
@@ -370,6 +394,7 @@ function resetFiltersUI() {
     const group = document.getElementById('filter-group');
     const audio = document.getElementById('filter-audio');
     const channels = document.getElementById('filter-channels');
+    const extension = document.getElementById('filter-extension');
     const codec = document.getElementById('filter-codec');
 
     if (search) search.value = '';
@@ -380,6 +405,7 @@ function resetFiltersUI() {
     if (group) group.value = '';
     if (audio) audio.value = '';
     if (channels) channels.value = '';
+    if (extension) extension.value = '';
     if (codec) codec.value = '';
 }
 
@@ -440,6 +466,7 @@ function initFilterHandlers() {
     const group = document.getElementById('filter-group');
     const audio = document.getElementById('filter-audio');
     const channels = document.getElementById('filter-channels');
+    const extension = document.getElementById('filter-extension');
     const codec = document.getElementById('filter-codec');
 
     const handleFilters = () => {
@@ -452,6 +479,7 @@ function initFilterHandlers() {
         const groupVal = group.value;
         const audioVal = audio ? audio.value : '';
         const channelsVal = channels ? channels.value : '';
+        const extensionVal = extension ? extension.value : '';
         const codecVal = codec ? codec.value : '';
 
         appState.filteredReleases = appState.allReleases.filter(item => {
@@ -484,6 +512,22 @@ function initFilterHandlers() {
             // Channels matching
             const matchChannels = !channelsVal || (item.channels && item.channels.toUpperCase() === channelsVal.toUpperCase());
 
+            // Extension matching
+            let matchExtension = true;
+            if (extensionVal) {
+                if (item.filename) {
+                    const parts = item.filename.split('.');
+                    if (parts.length > 1) {
+                        const ext = parts[parts.length - 1].toUpperCase();
+                        matchExtension = (ext === extensionVal.toUpperCase());
+                    } else {
+                        matchExtension = false;
+                    }
+                } else {
+                    matchExtension = false;
+                }
+            }
+
             // Codec matching
             let matchCodec = false;
             if (!codecVal) {
@@ -494,7 +538,7 @@ function initFilterHandlers() {
                 matchCodec = item.codec && item.codec.toUpperCase() === codecVal.toUpperCase();
             }
 
-            return matchQuery && matchCategory && matchResolution && matchQuality && matchLanguage && matchGroup && matchAudio && matchChannels && matchCodec;
+            return matchQuery && matchCategory && matchResolution && matchQuality && matchLanguage && matchGroup && matchAudio && matchChannels && matchExtension && matchCodec;
         });
 
         renderReleasesTable();
@@ -508,6 +552,7 @@ function initFilterHandlers() {
     if (group) group.addEventListener('change', handleFilters);
     if (audio) audio.addEventListener('change', handleFilters);
     if (channels) channels.addEventListener('change', handleFilters);
+    if (extension) extension.addEventListener('change', handleFilters);
     if (codec) codec.addEventListener('change', handleFilters);
 }
 
@@ -1617,6 +1662,26 @@ function renderStatsCharts() {
         groupsPeriodStart = new Date(today.getTime() - (limitDays - 1) * oneDay);
     }
 
+    // 4. Biggest Files Scoreboard Dropdown Setup
+    const biggestPeriodSelect = document.getElementById('select-biggest-files-period');
+    const biggestPeriodVal = biggestPeriodSelect ? biggestPeriodSelect.value : '1';
+    if (biggestPeriodSelect && !biggestPeriodSelect.dataset.listenerAdded) {
+        biggestPeriodSelect.addEventListener('change', () => renderStatsCharts());
+        biggestPeriodSelect.dataset.listenerAdded = 'true';
+    }
+
+    let biggestPeriodStart = null;
+    let biggestPeriodEnd = null;
+    if (biggestPeriodVal === 'yesterday') {
+        const oneDay = 24 * 60 * 60 * 1000;
+        biggestPeriodStart = new Date(today.getTime() - oneDay);
+        biggestPeriodEnd = today;
+    } else if (biggestPeriodVal !== 'all') {
+        const limitDays = parseInt(biggestPeriodVal, 10) || 7;
+        const oneDay = 24 * 60 * 60 * 1000;
+        biggestPeriodStart = new Date(today.getTime() - (limitDays - 1) * oneDay);
+    }
+
     // Calculate Counts
     const movieReleaseCounts = {};
     const movieDisplayNames = {};
@@ -1625,6 +1690,7 @@ function renderStatsCharts() {
     const seriesDisplayNames = {};
     const seriesImdbIds = {};
     const groupWeekCounts = {};
+    const biggestFilesMap = {};
 
     data.forEach(r => {
         const d = parseReleaseDate(r.date_added);
@@ -1652,9 +1718,10 @@ function renderStatsCharts() {
             if (seriesPeriodStart && (!d || d < seriesPeriodStart)) inRange = false;
             if (seriesPeriodEnd && (!d || d >= seriesPeriodEnd)) inRange = false;
             if (inRange) {
-                const key = r.title.toLowerCase();
+                const titleStr = r.year ? `${r.title} (${r.year})` : r.title;
+                const key = titleStr.toLowerCase();
                 seriesReleaseCounts[key] = (seriesReleaseCounts[key] || 0) + 1;
-                if (!seriesDisplayNames[key]) seriesDisplayNames[key] = r.title;
+                if (!seriesDisplayNames[key]) seriesDisplayNames[key] = titleStr;
                 // Store first encountered imdb_id for this series
                 if (!seriesImdbIds[key] && r.imdb_id) {
                     seriesImdbIds[key] = r.imdb_id;
@@ -1672,6 +1739,30 @@ function renderStatsCharts() {
                 groupWeekCounts[grp] = (groupWeekCounts[grp] || 0) + 1;
             }
         }
+        // Biggest files
+        let fileInRange = true;
+        if (biggestPeriodStart && (!d || d < biggestPeriodStart)) fileInRange = false;
+        if (biggestPeriodEnd && (!d || d >= biggestPeriodEnd)) fileInRange = false;
+        if (fileInRange && r.size) {
+            let bytes = 0;
+            const match = String(r.size).match(/^([\d.]+)\s*([a-zA-Z]+)/);
+            if (match) {
+                const val = parseFloat(match[1]);
+                const unit = match[2].toUpperCase();
+                if (unit === 'GB' || unit === 'GO' || unit === 'G') bytes = val * 1024 * 1024 * 1024;
+                else if (unit === 'MB' || unit === 'MO' || unit === 'M') bytes = val * 1024 * 1024;
+                else if (unit === 'KB' || unit === 'KO' || unit === 'K') bytes = val * 1024;
+                else if (unit === 'TB' || unit === 'TO' || unit === 'T') bytes = val * 1024 * 1024 * 1024 * 1024;
+                else bytes = val;
+            }
+            if (bytes > 0) {
+                let name = r.title || r.filename || 'Inconnu';
+                if (r.year) name = `${name} (${r.year})`;
+                if (!biggestFilesMap[name] || bytes > biggestFilesMap[name].size) {
+                    biggestFilesMap[name] = { name: name, size: bytes, sizeStr: r.size };
+                }
+            }
+        }
     });
 
     // Sort and get Top 10
@@ -1686,6 +1777,12 @@ function renderStatsCharts() {
     const topGroupsWeek = Object.entries(groupWeekCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
+
+    const topBiggestFiles = Object.values(biggestFilesMap)
+        .sort((a, b) => b.size - a.size)
+        .slice(0, 10);
+
+
 
     // Render Top Movies List
     const moviesListEl = document.getElementById('top-movies-list');
@@ -1791,6 +1888,27 @@ function renderStatsCharts() {
                     </div>
                 `;
                 groupsWeekListEl.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+    }
+    // Render Top Biggest Files
+    const biggestFilesListEl = document.getElementById('top-biggest-files-list');
+    if (biggestFilesListEl) {
+        biggestFilesListEl.innerHTML = '';
+        if (topBiggestFiles.length === 0) {
+            biggestFilesListEl.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 20px;">Aucun fichier sur cette période</div>';
+        } else {
+            topBiggestFiles.forEach((f, index) => {
+                const rank = index + 1;
+                const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                const itemHtml = `
+                    <div class="top-list-item">
+                        <span class="top-list-rank ${rankClass}">${rank}</span>
+                        <span class="top-list-name" title="${f.name}" style="font-family: var(--font-mono); font-size: 11px; white-space: normal; word-break: break-all;">${f.name}</span>
+                        <span class="top-list-count" style="color: var(--accent-pink); white-space: nowrap; margin-left: 10px;">${f.sizeStr}</span>
+                    </div>
+                `;
+                biggestFilesListEl.insertAdjacentHTML('beforeend', itemHtml);
             });
         }
     }
