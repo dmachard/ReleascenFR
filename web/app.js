@@ -105,6 +105,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
+        // Populate channels selector
+        const channelsSelect = document.getElementById('filter-channels');
+        if (channelsSelect) {
+            channelsSelect.innerHTML = '<option value="">Tous les canaux</option>';
+            const channelsSet = new Set();
+            appState.rawReleases.forEach(item => {
+                if (item.channels) {
+                    channelsSet.add(item.channels.toUpperCase());
+                }
+            });
+            Array.from(channelsSet).sort().forEach(chan => {
+                const option = document.createElement('option');
+                option.value = chan;
+                option.textContent = chan;
+                channelsSelect.appendChild(option);
+            });
+        }
+
         // Populate video codec selector
         const codecSelect = document.getElementById('filter-codec');
         if (codecSelect) {
@@ -351,6 +369,7 @@ function resetFiltersUI() {
     const lang = document.getElementById('filter-language');
     const group = document.getElementById('filter-group');
     const audio = document.getElementById('filter-audio');
+    const channels = document.getElementById('filter-channels');
     const codec = document.getElementById('filter-codec');
 
     if (search) search.value = '';
@@ -360,6 +379,7 @@ function resetFiltersUI() {
     if (lang) lang.value = '';
     if (group) group.value = '';
     if (audio) audio.value = '';
+    if (channels) channels.value = '';
     if (codec) codec.value = '';
 }
 
@@ -419,6 +439,7 @@ function initFilterHandlers() {
     const lang = document.getElementById('filter-language');
     const group = document.getElementById('filter-group');
     const audio = document.getElementById('filter-audio');
+    const channels = document.getElementById('filter-channels');
     const codec = document.getElementById('filter-codec');
 
     const handleFilters = () => {
@@ -430,6 +451,7 @@ function initFilterHandlers() {
         const langVal = lang.value;
         const groupVal = group.value;
         const audioVal = audio ? audio.value : '';
+        const channelsVal = channels ? channels.value : '';
         const codecVal = codec ? codec.value : '';
 
         appState.filteredReleases = appState.allReleases.filter(item => {
@@ -459,6 +481,9 @@ function initFilterHandlers() {
             // Audio matching
             const matchAudio = !audioVal || (item.audio && item.audio.toUpperCase() === audioVal.toUpperCase());
 
+            // Channels matching
+            const matchChannels = !channelsVal || (item.channels && item.channels.toUpperCase() === channelsVal.toUpperCase());
+
             // Codec matching
             let matchCodec = false;
             if (!codecVal) {
@@ -469,7 +494,7 @@ function initFilterHandlers() {
                 matchCodec = item.codec && item.codec.toUpperCase() === codecVal.toUpperCase();
             }
 
-            return matchQuery && matchCategory && matchResolution && matchQuality && matchLanguage && matchGroup && matchAudio && matchCodec;
+            return matchQuery && matchCategory && matchResolution && matchQuality && matchLanguage && matchGroup && matchAudio && matchChannels && matchCodec;
         });
 
         renderReleasesTable();
@@ -482,6 +507,7 @@ function initFilterHandlers() {
     lang.addEventListener('change', handleFilters);
     if (group) group.addEventListener('change', handleFilters);
     if (audio) audio.addEventListener('change', handleFilters);
+    if (channels) channels.addEventListener('change', handleFilters);
     if (codec) codec.addEventListener('change', handleFilters);
 }
 
