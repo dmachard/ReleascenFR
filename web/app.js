@@ -1713,6 +1713,14 @@ function renderStatsCharts() {
         biggestPeriodStart = new Date(today.getTime() - (limitDays - 1) * oneDay);
     }
 
+    // 5. Inactive Groups Scoreboard Dropdown Setup
+    const inactiveGroupsPeriodSelect = document.getElementById('select-inactive-groups-period');
+    const inactiveGroupsPeriodVal = inactiveGroupsPeriodSelect ? parseInt(inactiveGroupsPeriodSelect.value, 10) : 30;
+    if (inactiveGroupsPeriodSelect && !inactiveGroupsPeriodSelect.dataset.listenerAdded) {
+        inactiveGroupsPeriodSelect.addEventListener('change', () => renderStatsCharts());
+        inactiveGroupsPeriodSelect.dataset.listenerAdded = 'true';
+    }
+
     // Calculate Counts
     const movieReleaseCounts = {};
     const movieDisplayNames = {};
@@ -1722,6 +1730,7 @@ function renderStatsCharts() {
     const seriesImdbIds = {};
     const groupWeekCounts = {};
     const biggestFilesMap = {};
+    const groupLatestDates = {};
 
     data.forEach(r => {
         const d = parseReleaseDate(r.date_added);
@@ -1768,10 +1777,14 @@ function renderStatsCharts() {
         let groupInRange = true;
         if (groupsPeriodStart && (!d || d < groupsPeriodStart)) groupInRange = false;
         if (groupsPeriodEnd && (!d || d >= groupsPeriodEnd)) groupInRange = false;
-        if (groupInRange) {
-            const grp = r.group ? r.group.toUpperCase() : null;
-            if (grp && grp !== 'NON SPÉCIFIÉ' && grp !== 'INCONNU') {
-                groupWeekCounts[grp] = (groupWeekCounts[grp] || 0) + 1;
+        
+        const grpName = r.group ? r.group.toUpperCase() : null;
+        if (grpName && grpName !== 'NON SPÉCIFIÉ' && grpName !== 'INCONNU') {
+            if (d && (!groupLatestDates[grpName] || d > groupLatestDates[grpName])) {
+                groupLatestDates[grpName] = d;
+            }
+            if (groupInRange) {
+                groupWeekCounts[grpName] = (groupWeekCounts[grpName] || 0) + 1;
             }
         }
         // Biggest files
@@ -1944,6 +1957,33 @@ function renderStatsCharts() {
                     </div>
                 `;
                 biggestFilesListEl.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+    }
+
+    // Compute and Render Inactive Groups
+    const inactiveThreshold = new Date(today.getTime() - inactiveGroupsPeriodVal * 24 * 60 * 60 * 1000);
+    const inactiveGroups = Object.entries(groupLatestDates)
+        .filter(([grp, lastDate]) => lastDate < inactiveThreshold)
+        .sort((a, b) => a[1] - b[1]);
+
+    const inactiveGroupsListEl = document.getElementById('inactive-groups-list');
+    if (inactiveGroupsListEl) {
+        inactiveGroupsListEl.innerHTML = '';
+        if (inactiveGroups.length === 0) {
+            inactiveGroupsListEl.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 20px;">Aucune source inactive trouvée</div>';
+        } else {
+            inactiveGroups.forEach(([grp, lastDate]) => {
+                const diffTime = Math.abs(today - lastDate);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const itemHtml = `
+                    <div class="top-list-item">
+                        <span class="top-list-rank" style="font-size: 13px; width: auto; padding-right: 10px; color: var(--accent-red);">${diffDays}j</span>
+                        <span class="top-list-name" title="${grp}">${grp}</span>
+                        <span class="top-list-count" style="font-size: 11px;">Dernier: ${lastDate.toLocaleDateString('fr-FR')}</span>
+                    </div>
+                `;
+                inactiveGroupsListEl.insertAdjacentHTML('beforeend', itemHtml);
             });
         }
     }
