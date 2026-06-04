@@ -853,7 +853,7 @@ function updateStatsDashboard() {
             }
         }
         
-        if (r.resolution && (r.resolution === '2160p' || r.resolution === '4K')) {
+        if (r.resolution && (r.resolution.toLowerCase() === '2160p' || r.resolution.toLowerCase() === '4k')) {
             countUhd++;
         }
         if (r.v_quality && (r.v_quality.toUpperCase().includes('HDR') || r.v_quality.toUpperCase().includes('DV') || r.v_quality.toUpperCase().includes('DOLBY VISION'))) {
