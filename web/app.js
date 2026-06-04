@@ -723,6 +723,16 @@ function renderReleasesTable() {
                             <span class="detail-label">Titre Parsé</span>
                             <span class="detail-value" style="font-weight: 700;">${item.title || 'N/A'}</span>
                         </div>
+                        ${item.official_title ? `
+                        <div class="detail-item">
+                            <span class="detail-label">Titre Officiel</span>
+                            <span class="detail-value" style="font-weight: 700; color: var(--accent-orange);">${item.official_title}</span>
+                        </div>` : ''}
+                        ${item.official_year ? `
+                        <div class="detail-item">
+                            <span class="detail-label">Année Officielle</span>
+                            <span class="detail-value" style="font-weight: 700; color: var(--accent-orange);">${item.official_year}</span>
+                        </div>` : ''}
                         ${item.group ? `
                         <div class="detail-item">
                             <span class="detail-label">Groupe</span>
@@ -1702,10 +1712,11 @@ function renderStatsCharts() {
             if (moviesPeriodEnd && (!d || d >= moviesPeriodEnd)) inRange = false;
             if (inRange) {
                 const titleStr = r.year ? `${r.title} (${r.year})` : r.title;
-                const key = titleStr.toLowerCase();
+                const key = r.imdb_id ? r.imdb_id : titleStr.toLowerCase();
                 movieReleaseCounts[key] = (movieReleaseCounts[key] || 0) + 1;
-                if (!movieDisplayNames[key]) movieDisplayNames[key] = titleStr;
-                // Store first encountered imdb_id for this movie key
+                if (!movieDisplayNames[key] || titleStr.length > movieDisplayNames[key].length) {
+                    movieDisplayNames[key] = titleStr; // Prefer the longest/most complete title
+                }
                 if (!movieImdbIds[key] && r.imdb_id) {
                     movieImdbIds[key] = r.imdb_id;
                 }
@@ -1719,10 +1730,11 @@ function renderStatsCharts() {
             if (seriesPeriodEnd && (!d || d >= seriesPeriodEnd)) inRange = false;
             if (inRange) {
                 const titleStr = r.year ? `${r.title} (${r.year})` : r.title;
-                const key = titleStr.toLowerCase();
+                const key = r.imdb_id ? r.imdb_id : titleStr.toLowerCase();
                 seriesReleaseCounts[key] = (seriesReleaseCounts[key] || 0) + 1;
-                if (!seriesDisplayNames[key]) seriesDisplayNames[key] = titleStr;
-                // Store first encountered imdb_id for this series
+                if (!seriesDisplayNames[key] || titleStr.length > seriesDisplayNames[key].length) {
+                    seriesDisplayNames[key] = titleStr; // Prefer the longest/most complete title
+                }
                 if (!seriesImdbIds[key] && r.imdb_id) {
                     seriesImdbIds[key] = r.imdb_id;
                 }
@@ -1813,9 +1825,9 @@ function renderStatsCharts() {
                         <div class="top-list-poster-wrap">
                             ${imdbUrl
                                 ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
-                                       <img class="top-list-poster" src="${posterSrc}" alt="${name}" loading="lazy" onerror="this.src='no-poster.svg'">
+                                       <img class="top-list-poster" src="${posterSrc}" alt="" loading="lazy" onerror="this.src='no-poster.svg'">
                                    </a>`
-                                : `<img class="top-list-poster" src="no-poster.svg" alt="${name}" loading="lazy">`
+                                : `<img class="top-list-poster" src="no-poster.svg" alt="" loading="lazy">`
                             }
                         </div>
                         ${titleEl}
@@ -1856,9 +1868,9 @@ function renderStatsCharts() {
                         <div class="top-list-poster-wrap">
                             ${imdbUrl
                                 ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
-                                       <img class="top-list-poster" src="${posterSrc}" alt="${name}" loading="lazy" onerror="this.src='no-poster.svg'">
+                                       <img class="top-list-poster" src="${posterSrc}" alt="" loading="lazy" onerror="this.src='no-poster.svg'">
                                    </a>`
-                                : `<img class="top-list-poster" src="no-poster.svg" alt="${name}" loading="lazy">`
+                                : `<img class="top-list-poster" src="no-poster.svg" alt="" loading="lazy">`
                             }
                         </div>
                         ${titleEl}
