@@ -800,6 +800,7 @@ function renderReleasesTable() {
 
 // Update Summary Cards
 function updateStatsDashboard() {
+    const todayEl = document.getElementById('stat-today-additions');
     const totalEl = document.getElementById('stat-total-releases');
     const sizeEl = document.getElementById('stat-total-size');
     const moviesEl = document.getElementById('stat-total-movies');
@@ -807,6 +808,11 @@ function updateStatsDashboard() {
     const groupsEl = document.getElementById('stat-unique-groups');
 
     const total = appState.rawStats.length;
+    
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const todayAdditions = appState.rawStats.filter(r => r.date_added && r.date_added.startsWith(todayStr)).length;
+
     const movies = appState.rawStats.filter(r => r.category === 'movie').length;
     const series = appState.rawStats.filter(r => r.category === 'series').length;
 
@@ -862,6 +868,7 @@ function updateStatsDashboard() {
         formattedSize = `${b.toFixed(decimals)} ${units[i]}`;
     }
 
+    if (todayEl) todayEl.textContent = formatNumber(todayAdditions);
     totalEl.textContent = formatNumber(total);
     if (sizeEl) sizeEl.textContent = formattedSize;
     moviesEl.textContent = formatNumber(movies);
@@ -1711,7 +1718,8 @@ function renderStatsCharts() {
             if (moviesPeriodStart && (!d || d < moviesPeriodStart)) inRange = false;
             if (moviesPeriodEnd && (!d || d >= moviesPeriodEnd)) inRange = false;
             if (inRange) {
-                const titleStr = r.year ? `${r.title} (${r.year})` : r.title;
+                const y = r.official_year || r.year;
+                const titleStr = y ? `${r.title} (${y})` : r.title;
                 const key = r.imdb_id ? r.imdb_id : titleStr.toLowerCase();
                 movieReleaseCounts[key] = (movieReleaseCounts[key] || 0) + 1;
                 if (!movieDisplayNames[key] || titleStr.length > movieDisplayNames[key].length) {
@@ -1729,7 +1737,8 @@ function renderStatsCharts() {
             if (seriesPeriodStart && (!d || d < seriesPeriodStart)) inRange = false;
             if (seriesPeriodEnd && (!d || d >= seriesPeriodEnd)) inRange = false;
             if (inRange) {
-                const titleStr = r.year ? `${r.title} (${r.year})` : r.title;
+                const y = r.official_year || r.year;
+                const titleStr = y ? `${r.title} (${y})` : r.title;
                 const key = r.imdb_id ? r.imdb_id : titleStr.toLowerCase();
                 seriesReleaseCounts[key] = (seriesReleaseCounts[key] || 0) + 1;
                 if (!seriesDisplayNames[key] || titleStr.length > seriesDisplayNames[key].length) {
