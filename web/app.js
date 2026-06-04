@@ -806,6 +806,8 @@ function updateStatsDashboard() {
     const moviesEl = document.getElementById('stat-total-movies');
     const seriesEl = document.getElementById('stat-total-series');
     const groupsEl = document.getElementById('stat-unique-groups');
+    const uhdEl = document.getElementById('stat-4k-uhd');
+    const hdrEl = document.getElementById('stat-hdr-dv');
 
     const total = appState.rawStats.length;
     
@@ -819,6 +821,8 @@ function updateStatsDashboard() {
     const uniqueMovies = new Set();
     const uniqueSeries = new Set();
     let totalBytes = 0;
+    let countUhd = 0;
+    let countHdr = 0;
 
     appState.rawStats.forEach(r => {
         if (r.title) {
@@ -847,6 +851,13 @@ function updateStatsDashboard() {
                     totalBytes += val;
                 }
             }
+        }
+        
+        if (r.resolution && (r.resolution === '2160p' || r.resolution === '4K')) {
+            countUhd++;
+        }
+        if (r.v_quality && (r.v_quality.toUpperCase().includes('HDR') || r.v_quality.toUpperCase().includes('DV') || r.v_quality.toUpperCase().includes('DOLBY VISION'))) {
+            countHdr++;
         }
     });
 
@@ -880,6 +891,9 @@ function updateStatsDashboard() {
 
     const uniqueSeriesEl = document.getElementById('stat-unique-series');
     if (uniqueSeriesEl) uniqueSeriesEl.textContent = `${formatNumber(uniqueSeries.size)} uniques`;
+
+    if (uhdEl) uhdEl.textContent = formatNumber(countUhd);
+    if (hdrEl) hdrEl.textContent = formatNumber(countHdr);
 }
 
 // Generate/Render Chart.js charts
