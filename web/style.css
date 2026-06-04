@@ -755,6 +755,11 @@ body {
         flex-wrap: wrap;
         gap: 8px;
     }
+
+    #top-movies-list .top-list-count,
+    #top-series-list .top-list-count {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
