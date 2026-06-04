@@ -907,6 +907,99 @@ function renderStatsCharts() {
 
     const data = appState.rawStats;
 
+    // Distribution Pie Charts
+    cleanChart('pie-resolution');
+    cleanChart('pie-codec');
+    cleanChart('pie-hdr');
+
+    let count720p = 0, count1080p = 0, count2160p = 0;
+    let countHdrDv = 0, countSdr = 0;
+    let countX264 = 0, countX265 = 0, countAv1 = 0;
+
+    data.forEach(r => {
+        // Resolution
+        if (r.resolution) {
+            const res = r.resolution.toLowerCase();
+            if (res === '2160p' || res === '4k') count2160p++;
+            else if (res === '1080p') count1080p++;
+            else if (res === '720p') count720p++;
+        }
+        
+        // Codec
+        if (r.codec) {
+            const c = r.codec.toLowerCase();
+            if (c.includes('264')) countX264++;
+            else if (c.includes('265') || c.includes('hevc')) countX265++;
+            else if (c.includes('av1')) countAv1++;
+        }
+        
+        // HDR
+        if (r.v_quality) {
+            const vq = r.v_quality.toUpperCase();
+            if (vq.includes('HDR') || vq.includes('DV') || vq.includes('DOLBY VISION')) countHdrDv++;
+            else countSdr++;
+        } else {
+            countSdr++;
+        }
+    });
+
+    const commonPieOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+            legend: { position: 'right', labels: { color: '#94a3b8', font: { family: 'Outfit', size: 11 }, usePointStyle: true, boxWidth: 8 } },
+            tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#f1f5f9', bodyColor: '#cbd5e1' }
+        }
+    };
+
+    const ctxRes = document.getElementById('chart-pie-resolution');
+    if (ctxRes) {
+        appState.charts['pie-resolution'] = new Chart(ctxRes, {
+            type: 'doughnut',
+            data: {
+                labels: ['720p', '1080p', '2160p / 4K'],
+                datasets: [{
+                    data: [count720p, count1080p, count2160p],
+                    backgroundColor: ['#60a5fa', '#34d399', '#c084fc'],
+                    borderWidth: 0
+                }]
+            },
+            options: commonPieOptions
+        });
+    }
+
+    const ctxCodec = document.getElementById('chart-pie-codec');
+    if (ctxCodec) {
+        appState.charts['pie-codec'] = new Chart(ctxCodec, {
+            type: 'doughnut',
+            data: {
+                labels: ['x264', 'x265 / HEVC', 'AV1'],
+                datasets: [{
+                    data: [countX264, countX265, countAv1],
+                    backgroundColor: ['#f472b6', '#22d3ee', '#fbbf24'],
+                    borderWidth: 0
+                }]
+            },
+            options: commonPieOptions
+        });
+    }
+
+    const ctxHdr = document.getElementById('chart-pie-hdr');
+    if (ctxHdr) {
+        appState.charts['pie-hdr'] = new Chart(ctxHdr, {
+            type: 'doughnut',
+            data: {
+                labels: ['SDR', 'HDR / Dolby Vision'],
+                datasets: [{
+                    data: [countSdr, countHdrDv],
+                    backgroundColor: ['#94a3b8', '#eab308'],
+                    borderWidth: 0
+                }]
+            },
+            options: commonPieOptions
+        });
+    }
 
     // Chart 2: Qualities Trend Over Time (Line Chart)
     cleanChart('quality-trend');
