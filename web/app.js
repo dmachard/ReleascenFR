@@ -810,7 +810,7 @@ function updateStatsDashboard() {
     const hdrEl = document.getElementById('stat-hdr-dv');
 
     const total = appState.rawStats.length;
-    
+
     const now = new Date();
     const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
     const todayAdditions = appState.rawStats.filter(r => r.date_added && r.date_added.startsWith(todayStr)).length;
@@ -852,7 +852,7 @@ function updateStatsDashboard() {
                 }
             }
         }
-        
+
         if (r.resolution && (r.resolution.toLowerCase() === '2160p' || r.resolution.toLowerCase() === '4k')) {
             countUhd++;
         }
@@ -924,7 +924,7 @@ function renderStatsCharts() {
             else if (res === '1080p') count1080p++;
             else if (res === '720p') count720p++;
         }
-        
+
         // Codec
         if (r.codec) {
             const c = r.codec.toLowerCase();
@@ -932,7 +932,7 @@ function renderStatsCharts() {
             else if (c.includes('265') || c.includes('hevc')) countX265++;
             else if (c.includes('av1')) countAv1++;
         }
-        
+
         // HDR
         if (r.v_quality) {
             const vq = r.v_quality.toUpperCase();
@@ -974,7 +974,7 @@ function renderStatsCharts() {
         appState.charts['pie-codec'] = new Chart(ctxCodec, {
             type: 'doughnut',
             data: {
-                labels: ['x264', 'x265 / HEVC', 'AV1'],
+                labels: ['x264', 'x265'],
                 datasets: [{
                     data: [countX264, countX265, countAv1],
                     backgroundColor: ['#f472b6', '#22d3ee', '#fbbf24'],
@@ -993,7 +993,7 @@ function renderStatsCharts() {
                 labels: ['SDR', 'HDR / Dolby Vision'],
                 datasets: [{
                     data: [countSdr, countHdrDv],
-                    backgroundColor: ['#94a3b8', '#eab308'],
+                    backgroundColor: ['#3e74c1ff', '#eab308'],
                     borderWidth: 0
                 }]
             },
@@ -1870,7 +1870,7 @@ function renderStatsCharts() {
         let groupInRange = true;
         if (groupsPeriodStart && (!d || d < groupsPeriodStart)) groupInRange = false;
         if (groupsPeriodEnd && (!d || d >= groupsPeriodEnd)) groupInRange = false;
-        
+
         const grpName = r.group ? r.group.toUpperCase() : null;
         if (grpName && grpName !== 'NON SPÉCIFIÉ' && grpName !== 'INCONNU') {
             if (d && (!groupLatestDates[grpName] || d > groupLatestDates[grpName])) {
@@ -1953,11 +1953,11 @@ function renderStatsCharts() {
                         <span class="top-list-rank ${rankClass}">${rank}</span>
                         <div class="top-list-poster-wrap">
                             ${imdbUrl
-                                ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
+                        ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
                                        <img class="top-list-poster" src="${posterSrc}" alt="" loading="lazy" onerror="this.src='no-poster.svg'">
                                    </a>`
-                                : `<img class="top-list-poster" src="no-poster.svg" alt="" loading="lazy">`
-                            }
+                        : `<img class="top-list-poster" src="no-poster.svg" alt="" loading="lazy">`
+                    }
                         </div>
                         ${titleEl}
                         <span class="top-list-count">${count} entrées</span>
@@ -1996,11 +1996,11 @@ function renderStatsCharts() {
                         <span class="top-list-rank ${rankClass}">${rank}</span>
                         <div class="top-list-poster-wrap">
                             ${imdbUrl
-                                ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
+                        ? `<a href="${imdbUrl}" target="_blank" rel="noopener" tabindex="-1">
                                        <img class="top-list-poster" src="${posterSrc}" alt="" loading="lazy" onerror="this.src='no-poster.svg'">
                                    </a>`
-                                : `<img class="top-list-poster" src="no-poster.svg" alt="" loading="lazy">`
-                            }
+                        : `<img class="top-list-poster" src="no-poster.svg" alt="" loading="lazy">`
+                    }
                         </div>
                         ${titleEl}
                         <span class="top-list-count">${count} entrées</span>
