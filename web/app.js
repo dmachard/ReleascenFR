@@ -2070,10 +2070,12 @@ function renderStatsCharts() {
                 const diffTime = Math.abs(today - lastDate);
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
                 const itemHtml = `
-                    <div class="top-list-item">
-                        <span class="top-list-rank" style="font-size: 13px; width: auto; padding-right: 10px; color: var(--accent-red);">${diffDays}j</span>
-                        <span class="top-list-name" title="${grp}">${grp}</span>
-                        <span class="top-list-count" style="font-size: 11px;">Dernier: ${lastDate.toLocaleDateString('fr-FR')}</span>
+                    <div class="top-list-item" style="border-left: 3px solid var(--accent-red); padding-left: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
+                            <span style="color: var(--accent-red); font-weight: 800; font-size: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;"><i class="fas fa-clock"></i> ${diffDays} jours</span>
+                            <span class="top-list-name" title="${grp}" style="font-size: 15px;">${grp}</span>
+                        </div>
+                        <span class="top-list-count" style="background: rgba(255, 255, 255, 0.05); color: var(--text-secondary); font-weight: 500; font-size: 12px;"><i class="fas fa-history" style="margin-right: 6px;"></i>Dernier : ${lastDate.toLocaleDateString('fr-FR')}</span>
                     </div>
                 `;
                 inactiveGroupsListEl.insertAdjacentHTML('beforeend', itemHtml);
