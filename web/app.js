@@ -129,14 +129,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             extensionSelect.innerHTML = '<option value="">Toutes les extensions</option>';
             const extensionSet = new Set();
             appState.rawReleases.forEach(item => {
-                if (item.filename) {
-                    const parts = item.filename.split('.');
-                    if (parts.length > 1) {
-                        const ext = parts[parts.length - 1].toLowerCase();
-                        if (/^[a-z0-9]{2,4}$/.test(ext)) {
-                            extensionSet.add(ext.toUpperCase());
-                        }
-                    }
+                if (item.container) {
+                    extensionSet.add(item.container.toUpperCase());
                 }
             });
             Array.from(extensionSet).sort().forEach(ext => {
@@ -515,17 +509,7 @@ function initFilterHandlers() {
             // Extension matching
             let matchExtension = true;
             if (extensionVal) {
-                if (item.filename) {
-                    const parts = item.filename.split('.');
-                    if (parts.length > 1) {
-                        const ext = parts[parts.length - 1].toUpperCase();
-                        matchExtension = (ext === extensionVal.toUpperCase());
-                    } else {
-                        matchExtension = false;
-                    }
-                } else {
-                    matchExtension = false;
-                }
+                matchExtension = (item.container && item.container.toUpperCase() === extensionVal.toUpperCase());
             }
 
             // Codec matching
